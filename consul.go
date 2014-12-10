@@ -40,11 +40,12 @@ func NewConsul(address string, datacenter string) (*Consul, error) {
   return &Consul{KVPrefix: "conductor-services", Client: client}, nil
 }
 
-// Takes a keyvalue name from consul and strips off the prefix
+// Takes the key from a consul KVPair from consul and strips off the prefix
 func (c *Consul) CleanupServiceName(name string) string {
   return strings.TrimPrefix(name, fmt.Sprintf("%s/", c.KVPrefix))
 }
 
+// Takes a consul KVPair and returns a Service struct
 func (c *Consul) MapKVToService(kv *api.KVPair) *Service {
   mount, err := base64.StdEncoding.DecodeString(string(kv.Value))
   name := c.CleanupServiceName(kv.Key)
@@ -60,6 +61,7 @@ func (c *Consul) MapKVToService(kv *api.KVPair) *Service {
   }
 }
 
+// Takes a slice of consul KVPairs and returns a ServiceList
 func (c *Consul) MapKVPairsToServiceList(kvs *api.KVPairs) *ServiceList {
   list := make(ServiceList, len(*kvs), len(*kvs))
   for i, kv := range(*kvs) {
