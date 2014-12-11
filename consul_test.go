@@ -53,6 +53,9 @@ func TestMapKVPairsToServiceList(t *testing.T) {
   }
 
   result := consul.MapKVPairsToServiceList(input)
+  if len(result) == 0 {
+    t.Fatal("No services returned")
+  }
   for i, r := range(*result) {
     e := expected[i]
     if r.Name != e.Name || r.MountPoint != e.MountPoint {
