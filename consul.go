@@ -71,6 +71,8 @@ func (c *Consul) MapKVPairsToServiceList(kvs *api.KVPairs) *ServiceList {
   return &list
 }
 
+// Loops over the Consul Health Service data and adds the nodes and Port to the
+// Service
 func (c *Consul) AddNodesToService(service *Service, serviceHealth []*api.ServiceEntry) *Service {
   length := len(serviceHealth)
   service.Port = serviceHealth[1].Service.Port
@@ -79,4 +81,15 @@ func (c *Consul) AddNodesToService(service *Service, serviceHealth []*api.Servic
     service.Nodes[i] = s.Node
   }
   return service
+}
+
+// Does the actual query to Consul and adds the Healthy Nodes to the service
+// TODO: Allow for blocking queries
+func (c *Consul) GetHealthyNodesForService(service *Service) (*Service, error) {
+  healthyServices, _, err := c.Client.Health().Service(service.Name, "", true, nil)
+  if err != nil {
+    return nil, err
+  }
+  c.AddNodesToService(service, healthyServices)
+  return service, nil
 }
