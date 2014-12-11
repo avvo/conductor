@@ -72,5 +72,11 @@ func (c *Consul) MapKVPairsToServiceList(kvs *api.KVPairs) *ServiceList {
 }
 
 func (c *Consul) AddNodesToService(service *Service, serviceHealth []*api.ServiceEntry) *Service {
+  length := len(serviceHealth)
+  service.Port = serviceHealth[1].Service.Port
+  service.Nodes = make([]*api.Node, length, length)
+  for i, s := range(serviceHealth) {
+    service.Nodes[i] = s.Node
+  }
   return service
 }

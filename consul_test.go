@@ -53,13 +53,13 @@ func TestMapKVPairsToServiceList(t *testing.T) {
   }
 
   result := consul.MapKVPairsToServiceList(input)
-  if len(result) == 0 {
+  if len(*result) == 0 {
     t.Fatal("No services returned")
   }
   for i, r := range(*result) {
     e := expected[i]
     if r.Name != e.Name || r.MountPoint != e.MountPoint {
-      t.Error(fmt.Sprintf("Expected:\n %v \nBut got:\n %v", expected, result))
+      t.Errorf("Expected:\n %v \nBut got:\n %v", expected, result)
     }
   }
 }
@@ -82,19 +82,26 @@ func TestAddNodesToService(t *testing.T) {
     Port: 8983,
   }
   consulInput := []*api.ServiceEntry{
-    &api.ServiceEntry{Node: &api.Node{Address: "solr1.example.com"}, Service: consulService},
-    &api.ServiceEntry{Node: &api.Node{Address: "solr2.example.com"}, Service: consulService},
+    &api.ServiceEntry{Node: &api.Node{Address: "solr1.example.com", Node: "solr1"},
+      Service: consulService},
+    &api.ServiceEntry{Node: &api.Node{Address: "solr2.example.com", Node: "solr2"},
+      Service: consulService},
   }
 
   result := *consul.AddNodesToService(service, consulInput)
+
+  if result.Port != expected.Port {
+    t.Errorf("expected port: %d but got port: %d", expected.Port, result.Port)
+  }
+
   if len(result.Nodes) == 0 {
     t.Fatal("No nodes returned")
   }
+
   for i, e := range(expected.Nodes) {
     r := result.Nodes[i]
-    fmt.Printf("Expected:\n %+v \nBut got:\n %+v", e, r)
     if r == nil || r.Address != e.Address || r.Node != e.Node {
-      t.Error(fmt.Sprintf("Expected:\n %+v \nBut got:\n %+v", e, r))
+      t.Errorf("Expected:\n %+v \nBut got:\n %+v", e, r)
     }
   }
 }
