@@ -60,3 +60,38 @@ func TestMapKVPairsToServiceList(t *testing.T) {
     }
   }
 }
+
+func TestAddNodesToService(t *testing.T) {
+  service := &Service{Name: "solr", MountPoint: "/solr"}
+
+  expected := &Service{Name: "solr",
+    MountPoint: "/solr",
+    Port: 8983,
+    Nodes: []*api.Node{
+      &api.Node{Node: "solr1", Address: "solr1.example.com"},
+      &api.Node{Node: "solr2", Address: "solr2.example.com"},
+    },
+  }
+
+  consulService := &api.AgentService{
+    ID: "solr",
+    Service: "solr",
+    Port: 8983,
+  }
+  consulInput := []*api.ServiceEntry{
+    &api.ServiceEntry{Node: &api.Node{Address: "solr1.example.com"}, Service: consulService},
+    &api.ServiceEntry{Node: &api.Node{Address: "solr2.example.com"}, Service: consulService},
+  }
+
+  result := *consul.AddNodesToService(service, consulInput)
+  if len(result.Nodes) == 0 {
+    t.Fatal("No nodes returned")
+  }
+  for i, e := range(expected.Nodes) {
+    r := result.Nodes[i]
+    fmt.Printf("Expected:\n %+v \nBut got:\n %+v", e, r)
+    if r == nil || r.Address != e.Address || r.Node != e.Node {
+      t.Error(fmt.Sprintf("Expected:\n %+v \nBut got:\n %+v", e, r))
+    }
+  }
+}

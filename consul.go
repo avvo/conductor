@@ -17,7 +17,8 @@ type ServiceList []*Service
 type Service struct {
   Name string
   MountPoint string
-  Nodes []*Node
+  Nodes []*api.Node
+  Port int
 }
 
 type Node struct {
@@ -68,4 +69,8 @@ func (c *Consul) MapKVPairsToServiceList(kvs *api.KVPairs) *ServiceList {
     list[i] = c.MapKVToService(kv)
   }
   return &list
+}
+
+func (c *Consul) AddNodesToService(service *Service, serviceHealth []*api.ServiceEntry) *Service {
+  return service
 }
