@@ -70,7 +70,7 @@ func main() {
 	if err != nil {
 		log.WithFields(logrus.Fields{"consul": config.ConsulHost,
 			"data_center": config.ConsulDataCenter,
-			"error": err}).Error("Could not connect to consul!")
+			"error": err, "action": "connect"}).Error("Could not connect to consul!")
 		os.Exit(1)
 	}
 
@@ -86,7 +86,7 @@ func main() {
   if err != nil {
     log.WithFields(logrus.Fields{"consul": config.ConsulHost,
       "data_center": config.ConsulDataCenter,
-      "error": err}).Error("Could not connect to consul!")
+      "error": err, "action": "GetListOfServices"}).Error("Could not connect to consul!")
     os.Exit(1)
   }
 
@@ -99,5 +99,19 @@ func main() {
     log.WithFields(logrus.Fields{"consul": config.ConsulHost,
       "data_center": config.ConsulDataCenter,
       "kv_prefix": config.KVPrefix}).Error("Found no services to proxy!")
+    os.Exit(1)
+  }
+
+  log.WithFields(logrus.Fields{"services": len(*serviceList),
+    "data_center": config.ConsulDataCenter,
+    "kv_prefix": config.KVPrefix}).Debug("Pulling healthy nodes for services")
+
+  // Pull the healthy nodes
+  _, err = consul.GetAllHealthyNodes(serviceList)
+  if err != nil {
+    log.WithFields(logrus.Fields{"consul": config.ConsulHost,
+    "data_center": config.ConsulDataCenter,
+    "error": err, "action": "GetAllHealthyNodes"}).Error("Could not connect to consul!")
+    os.Exit(1)
   }
 }

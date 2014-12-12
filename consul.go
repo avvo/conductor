@@ -104,3 +104,14 @@ func (c *Consul) GetHealthyNodesForService(service *Service) (*Service, error) {
 	c.AddNodesToService(service, healthyServices)
 	return service, nil
 }
+
+// Gets all the nodes from Consul
+func (c *Consul) GetAllHealthyNodes(serviceList *ServiceList) (*ServiceList, error){
+  for _, s := range(*serviceList) {
+    _, err := c.GetHealthyNodesForService(s)
+    if err != nil {
+      return serviceList, err
+    }
+  }
+  return serviceList, nil
+}
