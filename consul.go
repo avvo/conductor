@@ -62,10 +62,21 @@ func (c *Consul) MapKVToService(kv *api.KVPair) *Service {
   }
 }
 
+// Does the actual query to Consul and for the service names underneath with the
+// KVPrefix
+// TODO: Allow for blocking queries
+func (c *Consul) GetListOfServices() (*ServiceList, error) {
+  kvs, _, err := c.Client.KV().List(c.KVPrefix, nil)
+  if err != nil {
+    return nil, err
+  }
+  return c.MapKVPairsToServiceList(kvs), nil
+}
+
 // Takes a slice of consul KVPairs and returns a ServiceList
-func (c *Consul) MapKVPairsToServiceList(kvs *api.KVPairs) *ServiceList {
-  list := make(ServiceList, len(*kvs), len(*kvs))
-  for i, kv := range(*kvs) {
+func (c *Consul) MapKVPairsToServiceList(kvs api.KVPairs) *ServiceList {
+  list := make(ServiceList, len(kvs), len(kvs))
+  for i, kv := range(kvs) {
     list[i] = c.MapKVToService(kv)
   }
   return &list

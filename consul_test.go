@@ -47,7 +47,7 @@ func TestMapKVPairsToServiceList(t *testing.T) {
     &Service{Name: "solr", MountPoint: "/solr"},
     &Service{Name: "backend_service_v1", MountPoint: "/service/v1"},
   }
-  input := &api.KVPairs{
+  input := api.KVPairs{
     &api.KVPair{Key: "conductor-services/solr", Value: []byte("L3NvbHI=")},
     &api.KVPair{Key: "conductor-services/backend_service_v1", Value: []byte("L3NlcnZpY2UvdjE=")},
   }
