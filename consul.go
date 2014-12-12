@@ -62,7 +62,7 @@ func (c *Consul) MapKVToService(kv *api.KVPair) *Service {
   }
 }
 
-// Does the actual query to Consul and for the service names underneath with the
+// Does the actual query to Consul for the service names underneath the
 // KVPrefix
 // TODO: Allow for blocking queries
 func (c *Consul) GetListOfServices() (*ServiceList, error) {
