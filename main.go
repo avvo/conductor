@@ -64,16 +64,40 @@ func main() {
 		"data_center": config.ConsulDataCenter}).Debug("Connecting to consul")
 
 	// Create the consul connection object
-	_, err := NewConsul(config.ConsulHost, config.ConsulDataCenter, config.KVPrefix)
+	consul, err := NewConsul(config.ConsulHost, config.ConsulDataCenter, config.KVPrefix)
 
 	// Failed to connect
 	if err != nil {
 		log.WithFields(logrus.Fields{"consul": config.ConsulHost,
 			"data_center": config.ConsulDataCenter,
-			"error":       err}).Error("Could not connect to consul!")
+			"error": err}).Error("Could not connect to consul!")
 		os.Exit(1)
 	}
 
 	log.WithFields(logrus.Fields{"consul": config.ConsulHost,
 		"data_center": config.ConsulDataCenter}).Debug("Connected to consul successfully.")
+
+  log.WithFields(logrus.Fields{"consul": config.ConsulHost,
+    "data_center": config.ConsulDataCenter,
+    "kv_prefix": config.KVPrefix}).Debug("Pulling load balanceable service list")
+
+  // Pull Servers from Consul
+  serviceList, err := consul.GetListOfServices()
+  if err != nil {
+    log.WithFields(logrus.Fields{"consul": config.ConsulHost,
+      "data_center": config.ConsulDataCenter,
+      "error": err}).Error("Could not connect to consul!")
+    os.Exit(1)
+  }
+
+  log.WithFields(logrus.Fields{"services": len(*serviceList),
+    "data_center": config.ConsulDataCenter,
+    "kv_prefix": config.KVPrefix}).Debug("Retrieved services")
+
+  // We don't have any services in Consul to proxy
+  if len(*serviceList) < 1 {
+    log.WithFields(logrus.Fields{"consul": config.ConsulHost,
+      "data_center": config.ConsulDataCenter,
+      "kv_prefix": config.KVPrefix}).Error("Found no services to proxy!")
+  }
 }
