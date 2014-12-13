@@ -22,6 +22,7 @@ type Config struct {
 // Initialize the Configuration struct
 var config Config
 var log *logrus.Logger
+var lb *LoadBalancer
 
 // Parse commandline and setup logging
 func init() {
@@ -35,7 +36,7 @@ func init() {
 		"Format logs in this format (either 'json' or 'lsmet')")
 	flag.StringVar(&config.LogLevel, "log-level", "info",
 		"Log level to use (debug, info, warn, error, fatal, or panic)")
-	flag.StringVar(&config.KVPrefix, "kv-prefix", "consul-services",
+	flag.StringVar(&config.KVPrefix, "kv-prefix", "conductor-services",
 		"The Key Value prefix in consul to search for services under")
 
 	flag.Parse()
@@ -114,4 +115,9 @@ func main() {
     "error": err, "action": "GetAllHealthyNodes"}).Error("Could not connect to consul!")
     os.Exit(1)
   }
+
+  log.WithFields(logrus.Fields{"services": len(*serviceList),
+    "balancing_algorithm": config.LoadBalancer}).Debug("Setting up loadbalancer")
+
+  //lb := NewLoadBalancer(serviceList, NewNiaveRoundRobin)
 }

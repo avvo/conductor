@@ -3,7 +3,6 @@ package main
 import (
 	"net/url"
   "strings"
-  "errors"
 )
 
 type LoadBalancer struct {
@@ -16,31 +15,38 @@ type LoadBalancer struct {
 	MountPointToLoadBalancerFuncMap map[string](func() url.URL)
 }
 
-func NewLoadBalancer(services []*Service, builder func(*Service) func() url.URL) *LoadBalancer {
+func NewLoadBalancer(services *ServiceList, builder func(*Service) func() url.URL) *LoadBalancer {
   lb := &LoadBalancer{BuilderFunction: builder}
   lb.Reload(services)
 	return lb
 }
 
-func (lb *LoadBalancer) Reload(services []*Service) {
+func (lb *LoadBalancer) Reload(services *ServiceList) {
   lb.MountPointToLoadBalancerFuncMap = lb.GenerateMountPointMap(services)
 }
 
 // Takes the list of services and creates a map that looks something like this:
 // {"/solr": func() string}
-func (lb *LoadBalancer) GenerateMountPointMap(services []*Service) (map[string](func() url.URL) ) {
+func (lb *LoadBalancer) GenerateMountPointMap(services *ServiceList) (map[string](func() url.URL) ) {
 	m := make(map[string](func() url.URL))
-  for _, s := range services {
+  for _, s := range(*services) {
 		m[s.MountPoint] = lb.BuilderFunction(s)
 	}
 	return m
 }
 
+// Given a path ("/solr/search.jsp"), it will return the next server according
+// to the loadbalancing algorithm
 func (lb *LoadBalancer) NextServerForPath(path string) (url.URL, error) {
+  var server url.URL
   for mountpoint, lbfunc := range(lb.MountPointToLoadBalancerFuncMap) {
     if(strings.HasPrefix(path, mountpoint)) {
-      return lbfunc(), nil
+      server = lbfunc()
+      if server.Host == "" {
+        return server, NewNoHealthyNodesError(mountpoint, path)
+      }
+      return server, nil
     }
   }
-  return url.URL{}, errors.New("No mount point found")
+  return server, NewNoMatchingMountPointError(path)
 }

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var services []*Service
+var services ServiceList
 
 func init() {
 	solr := &Service{Name: "solr",
@@ -40,7 +40,7 @@ func init() {
 
 func TestGenerateMountPointMap(t *testing.T) {
 	l := &LoadBalancer{BuilderFunction: NewNiaveRoundRobin}
-	m := l.GenerateMountPointMap(services)
+	m := l.GenerateMountPointMap(&services)
 	solr := m["/solr"]
 	bv1 := m["/backend/v1"]
 	bv2 := m["/backend/v2"]
@@ -72,7 +72,7 @@ func TestGenerateMountPointMap(t *testing.T) {
 
 func TestLoadBalancerReload(t *testing.T) {
 	l := LoadBalancer{BuilderFunction: NewNiaveRoundRobin}
-	l.Reload(services)
+	l.Reload(&services)
 
   bv1 := l.MountPointToLoadBalancerFuncMap["/backend/v1"]
   if bv1 == nil {
@@ -85,7 +85,7 @@ func TestLoadBalancerReload(t *testing.T) {
 }
 
 func TestNextServerForPath(t *testing.T) {
-  lb := NewLoadBalancer(services, NewNiaveRoundRobin)
+  lb := NewLoadBalancer(&services, NewNiaveRoundRobin)
   r, err := lb.NextServerForPath("/solr/admin/file/?contentType=text/xml;charset=utf-8&file=solrconfig.xml")
 
   if err != nil {
