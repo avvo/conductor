@@ -143,8 +143,8 @@ func main() {
 }
 
 func exit(lb *LoadBalancer) {
-	for mp, c := range lb.WorkerControlChans {
+	for mp, w := range lb.Workers {
 		log.WithFields(log.Fields{"mount_point": mp}).Debug("Telling worker to quit")
-		c <- true
+		w.ControlChan <- true
 	}
 }

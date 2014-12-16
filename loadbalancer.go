@@ -16,12 +16,8 @@ type LoadBalancer struct {
 	MountPointToLoadBalancerFuncMap map[string](func() url.URL)
 	MountPointToReverseProxyMap     map[string]*httputil.ReverseProxy
 
-	// The channels we will use to talk to the workers
-	WorkerRequestChans map[string]chan *chan url.URL
-	// The channel we use to tell workers to exit
-	WorkerControlChans map[string]chan bool
-	// The channel we use to send updated server lists
-	WorkerUpdateChans map[string]chan Service
+	// List of all the workers
+	Workers map[string] *LoadBalancerWorker
 }
 
 func NewLoadBalancer(services *ServiceList, builder func(Service) func() url.URL) *LoadBalancer {
@@ -64,29 +60,17 @@ func (lb *LoadBalancer) NextServerForPath(path string) (url.URL, error) {
 // Builds the HTTP Proxy map like so: {"/solr": http.HandlerFunc()}
 func (lb *LoadBalancer) GenerateReverseProxyMap() map[string]*httputil.ReverseProxy {
 	m := make(map[string]*httputil.ReverseProxy)
-	for mountPoint, rchan := range lb.WorkerRequestChans {
-		m[mountPoint] = NewReverseProxyWithLoadBalancer(mountPoint, rchan)
+	for mountPoint, w := range lb.Workers {
+		m[mountPoint] = NewReverseProxyWithLoadBalancer(mountPoint, w.RequestChan)
 	}
 	return m
 }
 
 func (lb *LoadBalancer) StartWorkers() {
-	// Create the maps to find these channels later
-	updateChannels := make(map[string]chan Service)
-	controlChannels := make(map[string]chan bool)
-	requestChannels := make(map[string]chan *chan url.URL)
-
 	// Create the channels and start the workers
 	for _, s := range services {
 		w := NewLoadBalancerWorker(lb.BuilderFunction)
-		updateChannels[s.MountPoint] = w.UpdateChan
-		controlChannels[s.MountPoint] = w.ControlChan
-		requestChannels[s.MountPoint] = w.RequestChan
+		lb.Workers[s.MountPoint] = w
 		go w.Work(*s)
 	}
-
-	// Save the maps to this object
-	lb.WorkerUpdateChans = updateChannels
-	lb.WorkerControlChans = controlChannels
-	lb.WorkerRequestChans = requestChannels
 }
