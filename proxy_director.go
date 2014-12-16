@@ -9,12 +9,12 @@ import (
 )
 
 func NewReverseProxyWithLoadBalancer(mountPoint string, requests chan *chan url.URL) *httputil.ReverseProxy {
-  response := make(chan url.URL, 1)
-  director := func(req *http.Request) {
-    // send our channel to the worker
-    requests <- &response
-    // Get the server URL as the response back on the channel
-    server := <-response
+	response := make(chan url.URL, 1)
+	director := func(req *http.Request) {
+		// send our channel to the worker
+		requests <- &response
+		// Get the server URL as the response back on the channel
+		server := <-response
 
 		req.URL.Scheme = "http"
 		req.URL.Host = server.Host

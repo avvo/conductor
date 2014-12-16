@@ -121,6 +121,7 @@ func main() {
 		"balancing_algorithm": config.LoadBalancer}).Debug("Setting up loadbalancer")
 
 	lb := NewLoadBalancer(serviceList, NewNiaveRoundRobin)
+	lb.StartWorkers()
 
 	for mountPoint, rp := range lb.MountPointToReverseProxyMap {
 		log.WithFields(log.Fields{"mount_point": mountPoint}).Debug("Adding mountpoint")
