@@ -21,15 +21,59 @@ func init() {
 
 func TestRequestFromWorker(t *testing.T) {
   w := NewLoadBalancerWorker(NewNiaveRoundRobin)
-  w.Work(service)
+  go w.Work(service)
   response := make(chan url.URL, 1)
   // send our channel to the worker
   w.RequestChan <- &response
   // Get the server URL as the response back on the channel
   server := <-response
 
-  if server.Host != "solr1.example.com" {
-    t.Errorf("Expected server host to be 'solr1.example.com' but got '%+v'", server.Host)
+  if server.Host != "solr1.example.com:8983" {
+    t.Errorf("Expected server host to be 'solr1.example.com:8983' but got '%+v'", server.Host)
   }
+
+  w.RequestChan <- &response
+  // Get the server URL as the response back on the channel
+  server = <-response
+
+  if server.Host != "solr2.example.com:8983" {
+    t.Errorf("Expected server host to be 'solr2.example.com:8983' but got '%+v'", server.Host)
+  }
+
+  w.ControlChan <- true
+}
+
+func TestReconfiguringWorker(t *testing.T) {
+  w := NewLoadBalancerWorker(NewNiaveRoundRobin)
+  go w.Work(service)
+  response := make(chan url.URL, 1)
+  // send our channel to the worker
+  w.RequestChan <- &response
+  // Get the server URL as the response back on the channel
+  server := <-response
+
+  // Verify the first result is still the original service
+  if server.Host != "solr1.example.com:8983" {
+    t.Errorf("Expected server host to be 'solr1.example.com:8983' but got '%+v'", server.Host)
+  }
+
+  newService := Service{Name: "solr",
+  MountPoint: "/solr",
+  Port:       1234,
+  Nodes: []*api.Node{
+    &api.Node{Node: "backend1", Address: "backend1.example.com"},
+    &api.Node{Node: "backend2", Address: "backend2.example.com"},
+    },
+  }
+
+  w.UpdateChan <- newService
+  w.RequestChan <- &response
+  // Get the server URL as the response back on the channel
+  server = <-response
+
+  if server.Host != "backend1.example.com:1234" {
+    t.Errorf("Expected server host to be 'backend1.example.com:1234' but got '%+v'", server.Host)
+  }
+
   w.ControlChan <- true
 }
