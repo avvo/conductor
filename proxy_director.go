@@ -8,10 +8,16 @@ import (
 	"strings"
 )
 
-func NewReverseProxyWithLoadBalancer(mountPoint string, lbFunc func() url.URL) *httputil.ReverseProxy {
-	director := func(req *http.Request) {
+func NewReverseProxyWithLoadBalancer(mountPoint string, requests chan *chan url.URL) *httputil.ReverseProxy {
+  response := make(chan url.URL, 1)
+  director := func(req *http.Request) {
+    // send our channel to the worker
+    requests <- &response
+    // Get the server URL as the response back on the channel
+    server := <-response
+
 		req.URL.Scheme = "http"
-		req.URL.Host = lbFunc().Host
+		req.URL.Host = server.Host
 		originalRequest := req.URL.Path
 		req.URL.Path = strings.TrimPrefix(req.URL.Path, mountPoint)
 		log.WithFields(log.Fields{
@@ -21,5 +27,6 @@ func NewReverseProxyWithLoadBalancer(mountPoint string, lbFunc func() url.URL) *
 			"forward_to":        req.URL.Host,
 		}).Info("Proxying request")
 	}
+
 	return &httputil.ReverseProxy{Director: director}
 }

@@ -9,7 +9,7 @@ import (
 var nrr func() url.URL
 
 func init() {
-	s := &Service{Name: "solr",
+	s := Service{Name: "solr",
 		MountPoint: "/solr",
 		Port:       8983,
 		Nodes: []*api.Node{
