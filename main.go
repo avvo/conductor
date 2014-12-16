@@ -2,9 +2,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	log "github.com/Sirupsen/logrus"
+	"net/http"
 	"os"
-	//"net/http/httputil"
-	"github.com/Sirupsen/logrus"
 )
 
 const Version = "0.0.1"
@@ -17,11 +18,11 @@ type Config struct {
 	LogLevel         string
 	LogFormat        string
 	KVPrefix         string
+	Port             int
 }
 
 // Initialize the Configuration struct
 var config Config
-var log *logrus.Logger
 var lb *LoadBalancer
 
 // Parse commandline and setup logging
@@ -38,30 +39,30 @@ func init() {
 		"Log level to use (debug, info, warn, error, fatal, or panic)")
 	flag.StringVar(&config.KVPrefix, "kv-prefix", "conductor-services",
 		"The Key Value prefix in consul to search for services under")
+	flag.IntVar(&config.Port, "port", 8888, "Listen on this port")
 
 	flag.Parse()
 
-	logLevelMap := map[string]logrus.Level{
-		"debug": logrus.DebugLevel,
-		"info":  logrus.InfoLevel,
-		"warn":  logrus.WarnLevel,
-		"error": logrus.ErrorLevel,
-		"fatal": logrus.FatalLevel,
-		"panic": logrus.PanicLevel,
+	logLevelMap := map[string]log.Level{
+		"debug": log.DebugLevel,
+		"info":  log.InfoLevel,
+		"warn":  log.WarnLevel,
+		"error": log.ErrorLevel,
+		"fatal": log.FatalLevel,
+		"panic": log.PanicLevel,
 	}
 
-	log = logrus.New()
-	log.Level = logLevelMap[config.LogLevel]
+	log.SetLevel(logLevelMap[config.LogLevel])
 
 	if config.LogFormat == "json" {
-		log.Formatter = new(logrus.JSONFormatter)
+		log.SetFormatter(new(log.JSONFormatter))
 	}
 }
 
 func main() {
-	log.WithFields(logrus.Fields{"version": Version,
+	log.WithFields(log.Fields{"version": Version,
 		"code_name": CodeName}).Info("Starting Conductor")
-	log.WithFields(logrus.Fields{"consul": config.ConsulHost,
+	log.WithFields(log.Fields{"consul": config.ConsulHost,
 		"data_center": config.ConsulDataCenter}).Debug("Connecting to consul")
 
 	// Create the consul connection object
@@ -69,55 +70,74 @@ func main() {
 
 	// Failed to connect
 	if err != nil {
-		log.WithFields(logrus.Fields{"consul": config.ConsulHost,
+		log.WithFields(log.Fields{"consul": config.ConsulHost,
 			"data_center": config.ConsulDataCenter,
-			"error": err, "action": "connect"}).Error("Could not connect to consul!")
+			"error":       err, "action": "connect"}).Error("Could not connect to consul!")
 		os.Exit(1)
 	}
 
-	log.WithFields(logrus.Fields{"consul": config.ConsulHost,
+	log.WithFields(log.Fields{"consul": config.ConsulHost,
 		"data_center": config.ConsulDataCenter}).Debug("Connected to consul successfully.")
 
-  log.WithFields(logrus.Fields{"consul": config.ConsulHost,
-    "data_center": config.ConsulDataCenter,
-    "kv_prefix": config.KVPrefix}).Debug("Pulling load balanceable service list")
+	log.WithFields(log.Fields{"consul": config.ConsulHost,
+		"data_center": config.ConsulDataCenter,
+		"kv_prefix":   config.KVPrefix}).Debug("Pulling load balanceable service list")
 
-  // Pull Servers from Consul
-  serviceList, err := consul.GetListOfServices()
-  if err != nil {
-    log.WithFields(logrus.Fields{"consul": config.ConsulHost,
-      "data_center": config.ConsulDataCenter,
-      "error": err, "action": "GetListOfServices"}).Error("Could not connect to consul!")
-    os.Exit(1)
-  }
+	// Pull Servers from Consul
+	serviceList, err := consul.GetListOfServices()
+	if err != nil {
+		log.WithFields(log.Fields{"consul": config.ConsulHost,
+			"data_center": config.ConsulDataCenter,
+			"error":       err, "action": "GetListOfServices"}).Error("Could not connect to consul!")
+		os.Exit(1)
+	}
 
-  log.WithFields(logrus.Fields{"services": len(*serviceList),
-    "data_center": config.ConsulDataCenter,
-    "kv_prefix": config.KVPrefix}).Debug("Retrieved services")
+	log.WithFields(log.Fields{"services": len(*serviceList),
+		"data_center": config.ConsulDataCenter,
+		"kv_prefix":   config.KVPrefix}).Debug("Retrieved services")
 
-  // We don't have any services in Consul to proxy
-  if len(*serviceList) < 1 {
-    log.WithFields(logrus.Fields{"consul": config.ConsulHost,
-      "data_center": config.ConsulDataCenter,
-      "kv_prefix": config.KVPrefix}).Error("Found no services to proxy!")
-    os.Exit(1)
-  }
+	// We don't have any services in Consul to proxy
+	if len(*serviceList) < 1 {
+		log.WithFields(log.Fields{"consul": config.ConsulHost,
+			"data_center": config.ConsulDataCenter,
+			"kv_prefix":   config.KVPrefix}).Error("Found no services to proxy!")
+		os.Exit(1)
+	}
 
-  log.WithFields(logrus.Fields{"services": len(*serviceList),
-    "data_center": config.ConsulDataCenter,
-    "kv_prefix": config.KVPrefix}).Debug("Pulling healthy nodes for services")
+	log.WithFields(log.Fields{"services": len(*serviceList),
+		"data_center": config.ConsulDataCenter,
+		"kv_prefix":   config.KVPrefix}).Debug("Pulling healthy nodes for services")
 
-  // Pull the healthy nodes
-  _, err = consul.GetAllHealthyNodes(serviceList)
-  if err != nil {
-    log.WithFields(logrus.Fields{"consul": config.ConsulHost,
-    "data_center": config.ConsulDataCenter,
-    "error": err, "action": "GetAllHealthyNodes"}).Error("Could not connect to consul!")
-    os.Exit(1)
-  }
+	// Pull the healthy nodes
+	_, err = consul.GetAllHealthyNodes(serviceList)
+	if err != nil {
+		log.WithFields(log.Fields{"consul": config.ConsulHost,
+			"data_center": config.ConsulDataCenter,
+			"error":       err, "action": "GetAllHealthyNodes"}).Error("Could not connect to consul!")
+		os.Exit(1)
+	}
 
-  log.WithFields(logrus.Fields{"services": len(*serviceList),
-    "balancing_algorithm": config.LoadBalancer}).Debug("Setting up loadbalancer")
+	log.WithFields(log.Fields{"services": len(*serviceList),
+		"balancing_algorithm": config.LoadBalancer}).Debug("Setting up loadbalancer")
 
-  //lb := NewLoadBalancer(serviceList, NewNiaveRoundRobin)
+	lb := NewLoadBalancer(serviceList, NewNiaveRoundRobin)
+
+	for mountPoint, rp := range lb.MountPointToReverseProxyMap {
+		log.WithFields(log.Fields{"mount_point": mountPoint}).Debug("Adding mountpoint")
+		http.HandleFunc(fmt.Sprintf("%s/", mountPoint), rp.ServeHTTP)
+	}
+
+	http.HandleFunc("/", noMatchingMountPointHandler)
+
+	log.WithFields(log.Fields{"port": config.Port,
+		"address": "0.0.0.0",
+		"status":  "running",
+	}).Info("Up and running")
+
+	// Start listening
+	// TODO: Figure out how to reconfigure dynamically with no downtime
+	err = http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

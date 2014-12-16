@@ -86,9 +86,9 @@ func (c *Consul) MapKVPairsToServiceList(kvs api.KVPairs) *ServiceList {
 // Service
 func (c *Consul) AddNodesToService(service *Service, serviceHealth []*api.ServiceEntry) *Service {
 	length := len(serviceHealth)
-  if length < 1 {
-    return service
-  }
+	if length < 1 {
+		return service
+	}
 	service.Port = serviceHealth[0].Service.Port
 	service.Nodes = make([]*api.Node, length, length)
 	for i, s := range serviceHealth {
@@ -109,12 +109,12 @@ func (c *Consul) GetHealthyNodesForService(service *Service) (*Service, error) {
 }
 
 // Gets all the nodes from Consul
-func (c *Consul) GetAllHealthyNodes(serviceList *ServiceList) (*ServiceList, error){
-  for _, s := range(*serviceList) {
-    _, err := c.GetHealthyNodesForService(s)
-    if err != nil {
-      return serviceList, err
-    }
-  }
-  return serviceList, nil
+func (c *Consul) GetAllHealthyNodes(serviceList *ServiceList) (*ServiceList, error) {
+	for _, s := range *serviceList {
+		_, err := c.GetHealthyNodesForService(s)
+		if err != nil {
+			return serviceList, err
+		}
+	}
+	return serviceList, nil
 }

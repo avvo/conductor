@@ -74,39 +74,39 @@ func TestLoadBalancerReload(t *testing.T) {
 	l := LoadBalancer{BuilderFunction: NewNiaveRoundRobin}
 	l.Reload(&services)
 
-  bv1 := l.MountPointToLoadBalancerFuncMap["/backend/v1"]
-  if bv1 == nil {
-    t.Fatal("bv1 mount point has no value")
-  }
-  r := bv1()
-  if r.Host != "backend1.example.com:8001" {
-    t.Errorf("Expected first call to bv1 mountpoint to be 'backendv1.example.com:8001' but got: '%s'", r.Host)
-  }
+	bv1 := l.MountPointToLoadBalancerFuncMap["/backend/v1"]
+	if bv1 == nil {
+		t.Fatal("bv1 mount point has no value")
+	}
+	r := bv1()
+	if r.Host != "backend1.example.com:8001" {
+		t.Errorf("Expected first call to bv1 mountpoint to be 'backendv1.example.com:8001' but got: '%s'", r.Host)
+	}
 }
 
 func TestNextServerForPath(t *testing.T) {
-  lb := NewLoadBalancer(&services, NewNiaveRoundRobin)
-  r, err := lb.NextServerForPath("/solr/admin/file/?contentType=text/xml;charset=utf-8&file=solrconfig.xml")
+	lb := NewLoadBalancer(&services, NewNiaveRoundRobin)
+	r, err := lb.NextServerForPath("/solr/admin/file/?contentType=text/xml;charset=utf-8&file=solrconfig.xml")
 
-  if err != nil {
-    t.Fatal("solr path should not have raised an error")
-  }
-  if r.Host != "solr1.example.com:8983" {
-    t.Errorf("Expected first url for solr path to be 'solr1.example.com:8983' but got: '%s'", r.Host)
-  }
+	if err != nil {
+		t.Fatal("solr path should not have raised an error")
+	}
+	if r.Host != "solr1.example.com:8983" {
+		t.Errorf("Expected first url for solr path to be 'solr1.example.com:8983' but got: '%s'", r.Host)
+	}
 
-  r, err = lb.NextServerForPath("/backend/v1/users")
+	r, err = lb.NextServerForPath("/backend/v1/users")
 
-  if err != nil {
-    t.Fatal("backend v1 path should not have raised an error")
-  }
-  if r.Host != "backend1.example.com:8001" {
-    t.Errorf("Expected first url for solr path to be 'backend1.example.com:8001' but got: '%s'", r.Host)
-  }
+	if err != nil {
+		t.Fatal("backend v1 path should not have raised an error")
+	}
+	if r.Host != "backend1.example.com:8001" {
+		t.Errorf("Expected first url for solr path to be 'backend1.example.com:8001' but got: '%s'", r.Host)
+	}
 
-  r, err = lb.NextServerForPath("/this/is/unroutable.json")
+	r, err = lb.NextServerForPath("/this/is/unroutable.json")
 
-  if err == nil {
-    t.Error("Non routed path should have raised an error")
-  }
+	if err == nil {
+		t.Error("Non routed path should have raised an error")
+	}
 }
