@@ -23,7 +23,6 @@ type Config struct {
 
 // Initialize the Configuration struct
 var config Config
-var lb *LoadBalancer
 
 // Parse commandline and setup logging
 func init() {
@@ -109,11 +108,12 @@ func main() {
 		"kv_prefix":   config.KVPrefix}).Debug("Pulling healthy nodes for services")
 
 	// Pull the healthy nodes
-	_, err = consul.GetAllHealthyNodes(serviceList)
+	serviceList, err = consul.GetAllHealthyNodes(serviceList)
 	if err != nil {
 		log.WithFields(log.Fields{"consul": config.ConsulHost,
 			"data_center": config.ConsulDataCenter,
-			"error":       err, "action": "GetAllHealthyNodes"}).Error("Could not connect to consul!")
+			"error":       err,
+			"action": "GetAllHealthyNodes"}).Error("Could not connect to consul!")
 		os.Exit(1)
 	}
 
@@ -122,10 +122,11 @@ func main() {
 
 	lb := NewLoadBalancer(serviceList, NewNiaveRoundRobin)
 	lb.StartWorkers()
+	lb.GenerateReverseProxyMap()
 
-	for mountPoint, rp := range lb.MountPointToReverseProxyMap {
-		log.WithFields(log.Fields{"mount_point": mountPoint}).Debug("Adding mountpoint")
-		http.HandleFunc(fmt.Sprintf("%s/", mountPoint), rp.ServeHTTP)
+	for mp, rp := range(lb.MountPointToReverseProxyMap) {
+		log.WithFields(log.Fields{"mount_point": mp}).Debug("Adding mountpoint handler function")
+		http.HandleFunc(fmt.Sprintf("%s/", mp), rp.ServeHTTP)
 	}
 
 	http.HandleFunc("/", noMatchingMountPointHandler)

@@ -19,28 +19,23 @@ type LoadBalancer struct {
 	Workers map[string]*LoadBalancerWorker
 }
 
-func NewLoadBalancer(services ServiceList, builder func(Service) func() url.URL) *LoadBalancer {
-	lb.Services = services
+func NewLoadBalancer(services *ServiceList, builder func(Service) func() url.URL) *LoadBalancer {
 	lb := &LoadBalancer{BuilderFunction: builder}
-	lb.Reload(services)
+	lb.Services = *services
 	return lb
 }
 
-func (lb *LoadBalancer) Reload(services ServiceList) {
-	lb.MountPointToReverseProxyMap = lb.GenerateReverseProxyMap()
-}
-
 // Builds the HTTP Proxy map like so: {"/solr": http.HandlerFunc()}
-func (lb *LoadBalancer) GenerateReverseProxyMap() map[string]*httputil.ReverseProxy {
-	m := make(map[string]*httputil.ReverseProxy)
+func (lb *LoadBalancer) GenerateReverseProxyMap() {
+	lb.MountPointToReverseProxyMap = make(map[string]*httputil.ReverseProxy)
 	for mountPoint, w := range lb.Workers {
-		m[mountPoint] = NewReverseProxyWithLoadBalancer(mountPoint, w.RequestChan)
+		lb.MountPointToReverseProxyMap[mountPoint] = NewReverseProxyWithLoadBalancer(mountPoint, w.RequestChan)
 	}
-	return m
 }
 
 func (lb *LoadBalancer) StartWorkers() {
 	// Create the channels and start the workers
+	lb.Workers = make(map[string]*LoadBalancerWorker)
 	for _, s := range lb.Services {
 		log.WithFields(log.Fields{"mount_point": s.MountPoint,
 			"name": s.Name}).Debug("Starting Loadbalancer Worker")

@@ -12,9 +12,9 @@ func init() {
 	s := Service{Name: "solr",
 		MountPoint: "/solr",
 		Port:       8983,
-		Nodes: []*api.Node{
-			&api.Node{Node: "solr1", Address: "solr1.example.com"},
-			&api.Node{Node: "solr2", Address: "solr2.example.com"},
+		Nodes: []api.Node{
+			api.Node{Node: "solr1", Address: "solr1.example.com"},
+			api.Node{Node: "solr2", Address: "solr2.example.com"},
 		},
 	}
 	nrr = NewNiaveRoundRobin(s)

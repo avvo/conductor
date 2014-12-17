@@ -12,9 +12,9 @@ func init() {
 	service = Service{Name: "solr",
 		MountPoint: "/solr",
 		Port:       8983,
-		Nodes: []*api.Node{
-			&api.Node{Node: "solr1", Address: "solr1.example.com"},
-			&api.Node{Node: "solr2", Address: "solr2.example.com"},
+		Nodes: []api.Node{
+			api.Node{Node: "solr1", Address: "solr1.example.com"},
+			api.Node{Node: "solr2", Address: "solr2.example.com"},
 		},
 	}
 }
@@ -60,9 +60,9 @@ func TestReconfiguringWorker(t *testing.T) {
 	newService := Service{Name: "solr",
 		MountPoint: "/solr",
 		Port:       1234,
-		Nodes: []*api.Node{
-			&api.Node{Node: "backend1", Address: "backend1.example.com"},
-			&api.Node{Node: "backend2", Address: "backend2.example.com"},
+		Nodes: []api.Node{
+			api.Node{Node: "backend1", Address: "backend1.example.com"},
+			api.Node{Node: "backend2", Address: "backend2.example.com"},
 		},
 	}
 
