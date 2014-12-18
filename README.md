@@ -31,3 +31,18 @@ the healthy nodes for each service
 * If new services are added to the KV Prefix it will regenerate its config and
 send new traffic to those services
 * If nodes become unhealthy or new nodes are added, Conductor reconfigures itself
+
+Load Testing
+============
+
+The load testing script will fire up a group of servers, register them in consul
+and then run siege against conductor. Eventually I will add a few steps where
+dynamic scaling of the application layer is done so that we can see how cleanly
+conductor handles backend changes.
+
+```
+boot2docker start
+brew install siege
+docker built -t conductor .
+./loadtest.sh
+```
