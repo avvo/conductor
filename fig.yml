@@ -8,6 +8,7 @@ consul:
     - "--server"
     - "--bootstrap"
     - "--retry-max=1"
+    - "--advertise=192.168.59.103"
 
 registrator:
   image: progrium/registrator
@@ -28,13 +29,10 @@ helloworld:
 
 conductor:
   image: conductor
-  expose:
-    - 8888
+  net: host
   ports:
     - 8888:8888
   command:
     - "--log-level=debug"
-    - "--consul=consul:8500"
+    - "--consul=127.0.0.1:8500"
     - "--port=8888"
-  links:
-    - consul

@@ -9,9 +9,7 @@ if [ -z $IP ]; then
   exit 1
 fi
 
-fig up -d consul
-# Let consul figure out who is master before continuing
-sleep 1
+fig up -d registrator
 
 #fig up -d --no-recreate registrator
 fig up -d helloworld
@@ -19,12 +17,9 @@ fig scale helloworld=4
 
 curl -sS -X PUT -d '/helloworld' ${IP}:8500/v1/kv/conductor-services/helloworld > /dev/null
 
-fig up -d --no-recreate conductor
+fig up -d conductor
 
-docker logs conductor_conductor_1
-
-siege -q -c 10 -b -t 2m --log=seige.log ${IP}:8888/helloworld/
+siege -q -c 100 -i -t 2m --log=siege.log ${IP}:8888/helloworld/bob
 
 fig stop
-
 fig rm
