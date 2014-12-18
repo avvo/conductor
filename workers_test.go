@@ -1,7 +1,6 @@
 package main
 
 import (
-	api "github.com/armon/consul-api"
 	"net/url"
 	"testing"
 )
@@ -10,11 +9,10 @@ var service Service
 
 func init() {
 	service = Service{Name: "solr",
-		MountPoint: "/solr",
-		Port:       8983,
-		Nodes: []api.Node{
-			api.Node{Node: "solr1", Address: "solr1.example.com"},
-			api.Node{Node: "solr2", Address: "solr2.example.com"},
+	MountPoint: "/solr",
+	Nodes: []Node{
+		Node{Name: "solr1", Address: "solr1.example.com", Port: 8983},
+		Node{Name: "solr2", Address: "solr2.example.com", Port: 8984},
 		},
 	}
 }
@@ -36,8 +34,8 @@ func TestRequestFromWorker(t *testing.T) {
 	// Get the server URL as the response back on the channel
 	server = <-response
 
-	if server.Host != "solr2.example.com:8983" {
-		t.Errorf("Expected server host to be 'solr2.example.com:8983' but got '%+v'", server.Host)
+	if server.Host != "solr2.example.com:8984" {
+		t.Errorf("Expected server host to be 'solr2.example.com:8984' but got '%+v'", server.Host)
 	}
 
 	w.ControlChan <- true
@@ -57,12 +55,11 @@ func TestReconfiguringWorker(t *testing.T) {
 		t.Errorf("Expected server host to be 'solr1.example.com:8983' but got '%+v'", server.Host)
 	}
 
-	newService := Service{Name: "solr",
-		MountPoint: "/solr",
-		Port:       1234,
-		Nodes: []api.Node{
-			api.Node{Node: "backend1", Address: "backend1.example.com"},
-			api.Node{Node: "backend2", Address: "backend2.example.com"},
+	newService := Service{Name: "backend",
+	MountPoint: "/backend",
+	Nodes: []Node{
+		Node{Name: "backend1", Address: "backend1.example.com", Port: 1234},
+		Node{Name: "backend2", Address: "backend2.example.com", Port: 4567},
 		},
 	}
 

@@ -69,39 +69,43 @@ func TestAddNodesToService(t *testing.T) {
 
 	expected := &Service{Name: "solr",
 		MountPoint: "/solr",
-		Port:       8983,
-		Nodes: []api.Node{
-			api.Node{Node: "solr1", Address: "solr1.example.com"},
-			api.Node{Node: "solr2", Address: "solr2.example.com"},
+		Nodes: []Node{
+			Node{Name: "solr1", Address: "solr1.example.com", Port: 8983},
+			Node{Name: "solr2", Address: "solr2.example.com", Port: 8984},
 		},
 	}
 
-	consulService := &api.AgentService{
-		ID:      "solr",
-		Service: "solr",
-		Port:    8983,
-	}
 	consulInput := []*api.ServiceEntry{
-		&api.ServiceEntry{Node: &api.Node{Address: "solr1.example.com", Node: "solr1"},
-			Service: consulService},
+		&api.ServiceEntry{
+			Node: &api.Node{Address: "solr1.example.com", Node: "solr1"},
+			Service: &api.AgentService{
+				ID:      "solr",
+				Service: "solr",
+				Port:    8983,
+			},
+		},
 		&api.ServiceEntry{Node: &api.Node{Address: "solr2.example.com", Node: "solr2"},
-			Service: consulService},
+			Service: &api.AgentService{
+				ID:      "solr",
+				Service: "solr",
+				Port:    8984,
+				},
+			},
 	}
 
 	result := *consul.AddNodesToService(service, consulInput)
-
-	if result.Port != expected.Port {
-		t.Errorf("expected port: %d but got port: %d", expected.Port, result.Port)
-	}
 
 	if len(result.Nodes) == 0 {
 		t.Fatal("No nodes returned")
 	}
 
-	for i, e := range expected.Nodes {
-		r := result.Nodes[i]
-		if r.Address != e.Address || r.Node != e.Node {
-			t.Errorf("Expected:\n %+v \nBut got:\n %+v", e, r)
+	for i, n := range result.Nodes {
+		if n.Port != expected.Nodes[i].Port {
+			t.Errorf("expected port: %d but got port: %d", expected.Nodes[i].Port, n.Port)
+		}
+
+		if n.Address != expected.Nodes[i].Address || n.Name != expected.Nodes[i].Name {
+			t.Errorf("Expected:\n %+v \nBut got:\n %+v", n, expected.Nodes[i])
 		}
 	}
 }

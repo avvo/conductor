@@ -17,12 +17,12 @@ type ServiceList []*Service
 type Service struct {
 	Name       string
 	MountPoint string
-	Nodes      []api.Node
-	Port       int
+	Nodes      []Node
 }
 
 type Node struct {
-	Hostname string
+	Name string
+	Address string
 	Port     int
 }
 
@@ -89,10 +89,11 @@ func (c *Consul) AddNodesToService(service *Service, serviceHealth []*api.Servic
 	if length < 1 {
 		return service
 	}
-	service.Port = serviceHealth[0].Service.Port
-	service.Nodes = make([]api.Node, length, length)
+	service.Nodes = make([]Node, length, length)
 	for i, s := range serviceHealth {
-		service.Nodes[i] = *s.Node
+		n := *s.Node
+		sv := *s.Service
+		service.Nodes[i] = Node{Name: n.Node, Address: n.Address, Port: sv.Port}
 	}
 	return service
 }

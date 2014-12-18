@@ -1,0 +1,40 @@
+consul:
+  image: progrium/consul
+  expose:
+    - 8500
+  ports:
+    - 8500:8500
+  command:
+    - "--server"
+    - "--bootstrap"
+    - "--retry-max=1"
+
+registrator:
+  image: progrium/registrator
+  command:
+    - consul://consul:8500
+  links:
+    - consul
+  volumes:
+    - "/var/run/docker.sock:/tmp/docker.sock"
+
+helloworld:
+  image: "google/golang-hello"
+  ports:
+    - 8080
+  environment:
+    SERVICE_NAME: helloworld
+    SERVICE_TAGS: hello
+
+conductor:
+  image: conductor
+  expose:
+    - 8888
+  ports:
+    - 8888:8888
+  command:
+    - "--log-level=debug"
+    - "--consul=consul:8500"
+    - "--port=8888"
+  links:
+    - consul

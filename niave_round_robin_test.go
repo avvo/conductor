@@ -1,7 +1,6 @@
 package main
 
 import (
-	api "github.com/armon/consul-api"
 	"net/url"
 	"testing"
 )
@@ -11,10 +10,9 @@ var nrr func() url.URL
 func init() {
 	s := Service{Name: "solr",
 		MountPoint: "/solr",
-		Port:       8983,
-		Nodes: []api.Node{
-			api.Node{Node: "solr1", Address: "solr1.example.com"},
-			api.Node{Node: "solr2", Address: "solr2.example.com"},
+		Nodes: []Node{
+			Node{Name: "solr1", Address: "solr1.example.com", Port: 8983},
+			Node{Name: "solr2", Address: "solr2.example.com", Port: 8984},
 		},
 	}
 	nrr = NewNiaveRoundRobin(s)
@@ -36,8 +34,8 @@ func TestNiaveRoundRobinNext(t *testing.T) {
 		t.Errorf("Expected scheme to be 'http' but got '%s'", r.Scheme)
 	}
 
-	if r.Host != "solr2.example.com:8983" {
-		t.Fatalf("Expected second call to NRR to return host of 'solr2.example.com:8983' but got '%v'", r.Host)
+	if r.Host != "solr2.example.com:8984" {
+		t.Fatalf("Expected second call to NRR to return host of 'solr2.example.com:8984' but got '%v'", r.Host)
 	}
 
 	r = nrr()
