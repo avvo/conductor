@@ -36,3 +36,5 @@ conductor:
     - "--log-level=debug"
     - "--consul=127.0.0.1:8500"
     - "--port=8888"
+  environment:
+    GOMAXPROCS: 4

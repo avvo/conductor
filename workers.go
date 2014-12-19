@@ -14,7 +14,7 @@ type LoadBalancerWorker struct {
 func NewLoadBalancerWorker(builderFunc func(Service) func() url.URL) *LoadBalancerWorker {
 	svchan := make(chan Service)
 	ctrlchan := make(chan bool)
-	rchan := make(chan *chan url.URL, 16)
+	rchan := make(chan *chan url.URL, 64)
 	return &LoadBalancerWorker{
 		ControlChan: ctrlchan,
 		UpdateChan:  svchan,
