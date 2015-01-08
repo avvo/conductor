@@ -89,8 +89,8 @@ func TestAddNodesToService(t *testing.T) {
 				ID:      "solr",
 				Service: "solr",
 				Port:    8984,
-				},
 			},
+		},
 	}
 
 	result := *consul.AddNodesToService(service, consulInput)

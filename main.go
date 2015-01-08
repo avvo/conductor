@@ -113,7 +113,7 @@ func main() {
 		log.WithFields(log.Fields{"consul": config.ConsulHost,
 			"data_center": config.ConsulDataCenter,
 			"error":       err,
-			"action": "GetAllHealthyNodes"}).Error("Could not connect to consul!")
+			"action":      "GetAllHealthyNodes"}).Error("Could not connect to consul!")
 		os.Exit(1)
 	}
 
@@ -124,7 +124,7 @@ func main() {
 	lb.StartWorkers()
 	lb.GenerateReverseProxyMap()
 
-	for mp, rp := range(lb.MountPointToReverseProxyMap) {
+	for mp, rp := range lb.MountPointToReverseProxyMap {
 		log.WithFields(log.Fields{"mount_point": mp}).Debug("Adding mountpoint handler function")
 		http.HandleFunc(fmt.Sprintf("%s/", mp), rp.ServeHTTP)
 	}

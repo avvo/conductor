@@ -21,9 +21,9 @@ type Service struct {
 }
 
 type Node struct {
-	Name string
+	Name    string
 	Address string
-	Port     int
+	Port    int
 }
 
 func NewConsul(address, datacenter, kvprefix string) (*Consul, error) {
