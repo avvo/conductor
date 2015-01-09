@@ -8,8 +8,8 @@ import (
 	"os"
 )
 
-const Version = "0.0.1"
-const CodeName = "Sleeping Python"
+const Version = "0.1.0"
+const CodeName = "Mega Zeus"
 
 type Config struct {
 	ConsulHost       string
@@ -120,9 +120,20 @@ func main() {
 	log.WithFields(log.Fields{"services": len(*serviceList),
 		"balancing_algorithm": config.LoadBalancer}).Debug("Setting up loadbalancer")
 
+	// Laucnch loadbalancers
 	lb := NewLoadBalancer(serviceList, NewNiaveRoundRobin)
 	lb.StartWorkers()
 	lb.GenerateReverseProxyMap()
+
+	healthWorkers := make(map[string]*ConsulHealthWorker)
+
+	// Launch health workers
+	for _, service := range lb.Services {
+		lbw := lb.Workers[service.MountPoint]
+		worker := NewConsulHealthWorker(consul, *service, lbw)
+		healthWorkers[service.MountPoint] = worker
+		go worker.Work()
+	}
 
 	for mp, rp := range lb.MountPointToReverseProxyMap {
 		log.WithFields(log.Fields{"mount_point": mp}).Debug("Adding mountpoint handler function")
@@ -131,7 +142,8 @@ func main() {
 
 	http.HandleFunc("/", noMatchingMountPointHandler)
 
-	log.WithFields(log.Fields{"port": config.Port,
+	log.WithFields(log.Fields{
+		"port": config.Port,
 		"address": "0.0.0.0",
 		"status":  "running",
 	}).Info("Up and running")
@@ -141,12 +153,18 @@ func main() {
 	err = http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil)
 	if err != nil {
 		log.Fatal(err)
+		exit(lb, healthWorkers)
 	}
 }
 
-func exit(lb *LoadBalancer) {
+func exit(lb *LoadBalancer, healthWorkers map[string]*ConsulHealthWorker) {
 	for mp, w := range lb.Workers {
-		log.WithFields(log.Fields{"mount_point": mp}).Debug("Telling worker to quit")
+		log.WithFields(log.Fields{"mount_point": mp}).Debug("Telling loadbalancer worker to quit")
+		w.ControlChan <- true
+	}
+
+	for mp, w := range healthWorkers {
+		log.WithFields(log.Fields{"mount_point": mp}).Debug("Telling consul health worker to quit")
 		w.ControlChan <- true
 	}
 }

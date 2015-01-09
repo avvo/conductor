@@ -1,7 +1,9 @@
 package main
 
 import (
+	"github.com/hashicorp/consul/api"
 	"net/url"
+	"time"
 )
 
 type LoadBalancerWorker struct {
@@ -40,4 +42,61 @@ func (w *LoadBalancerWorker) Work(initialService Service) {
 			return
 		}
 	}
+}
+
+type ConsulHealthWorker struct {
+	waitTime           time.Duration
+	service            Service
+	queryOptions       *api.QueryOptions
+	lastIndex          uint64
+	ControlChan        chan bool
+	consul             *Consul
+	loadbalancerWorker *LoadBalancerWorker
+	InputChan chan []*api.ServiceEntry
+}
+
+func NewConsulHealthWorker(c *Consul, service Service, lbworker *LoadBalancerWorker) *ConsulHealthWorker {
+	return &ConsulHealthWorker{
+		service:            service,
+		consul:             c,
+		loadbalancerWorker: lbworker,
+		ControlChan:        make(chan bool),
+		InputChan:          make(chan []*api.ServiceEntry, 1),
+		queryOptions:       &api.QueryOptions{WaitTime: time.Duration(30) * time.Second, RequireConsistent: true},
+	}
+}
+
+func (w *ConsulHealthWorker) Work() {
+	for {
+		select {
+		case result := <-w.InputChan:
+			if result[0] != nil {
+				w.consul.AddNodesToService(&w.service, result)
+				w.loadbalancerWorker.UpdateChan <- w.service
+			}
+			go w.BlockUntilConsulUpdate()
+		case _ = <-w.ControlChan:
+			return
+		}
+	}
+}
+
+func (w *ConsulHealthWorker) BlockUntilConsulUpdate() {
+	services, queryMeta, err := w.consul.Client.Health().Service(w.service.Name, "", true, w.queryOptions)
+	if err != nil {
+		w.InputChan <- []*api.ServiceEntry{}
+		return
+	}
+	if w.lastIndex == 0 {
+		w.InputChan <- services
+		return
+	}
+
+	if queryMeta.LastIndex > w.lastIndex {
+		w.lastIndex = queryMeta.LastIndex
+		w.InputChan <- services
+	} else {
+		w.InputChan <- []*api.ServiceEntry{}
+	}
+	return
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
-	api "github.com/armon/consul-api"
+	"github.com/hashicorp/consul/api"
 	"strings"
 )
 

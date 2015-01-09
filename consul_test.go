@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	api "github.com/armon/consul-api"
+	"github.com/hashicorp/consul/api"
 	"testing"
 )
 
