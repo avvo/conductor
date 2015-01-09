@@ -19,15 +19,18 @@ curl -sS -X PUT -d '/helloworld' ${IP}:8500/v1/kv/conductor-services/helloworld 
 
 fig up -d conductor
 if [ "x$1" == "x--scale" ]; then
-  echo "Starting siege with scaling test mode..."
-  $SIEGE &
+  { echo "Starting siege with scaling test mode..."; $SIEGE ; } &
   sleep 20s
   fig scale helloworld=6
-  sleep 40s
-  fig scale helloworld=2
-  sleep 15s
+  sleep 20s
+  fig scale helloworld=1
+  sleep 20s
   fig scale helloworld=4
-  fg %%
+  sleep 20s
+  fig scale helloworld=3
+  sleep 20s
+  fig scale helloworld=6
+  wait
 else
   echo -n "Starting siege..."
   $SIEGE

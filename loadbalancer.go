@@ -38,7 +38,7 @@ func (lb *LoadBalancer) StartWorkers() {
 	lb.Workers = make(map[string]*LoadBalancerWorker)
 	for _, s := range lb.Services {
 		log.WithFields(log.Fields{"mount_point": s.MountPoint,
-			"name": s.Name}).Debug("Starting Loadbalancer Worker")
+			"service": s.Name}).Debug("Starting Loadbalancer Worker")
 		w := NewLoadBalancerWorker(lb.BuilderFunction)
 		lb.Workers[s.MountPoint] = w
 		go w.Work(*s)

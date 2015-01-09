@@ -129,6 +129,8 @@ func main() {
 
 	// Launch health workers
 	for _, service := range lb.Services {
+		log.WithFields(log.Fields{"service": service.Name,
+			"mount_point": service.MountPoint}).Debug("Starting consul health worker")
 		lbw := lb.Workers[service.MountPoint]
 		worker := NewConsulHealthWorker(consul, *service, lbw)
 		healthWorkers[service.MountPoint] = worker
@@ -143,18 +145,17 @@ func main() {
 	http.HandleFunc("/", noMatchingMountPointHandler)
 
 	log.WithFields(log.Fields{
-		"port": config.Port,
+		"port":    config.Port,
 		"address": "0.0.0.0",
 		"status":  "running",
 	}).Info("Up and running")
 
 	// Start listening
-	// TODO: Figure out how to reconfigure dynamically with no downtime
 	err = http.ListenAndServe(fmt.Sprintf(":%d", config.Port), nil)
 	if err != nil {
 		log.Fatal(err)
-		exit(lb, healthWorkers)
 	}
+	exit(lb, healthWorkers)
 }
 
 func exit(lb *LoadBalancer, healthWorkers map[string]*ConsulHealthWorker) {
