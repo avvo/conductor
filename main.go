@@ -143,6 +143,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", noMatchingMountPointHandler)
+	http.HandleFunc("/_ping", pingHandler)
 
 	log.WithFields(log.Fields{
 		"port":    config.Port,
