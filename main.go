@@ -8,8 +8,8 @@ import (
 	"os"
 )
 
-const Version = "0.2.0"
-const CodeName = "Flaming Cobra"
+const Version = "0.2.1"
+const CodeName = "Fuzzy Koala"
 
 type Config struct {
 	ConsulHost       string
@@ -19,6 +19,7 @@ type Config struct {
 	LogFormat        string
 	KVPrefix         string
 	Port             int
+	Version          bool
 }
 
 // Initialize the Configuration struct
@@ -39,8 +40,14 @@ func init() {
 	flag.StringVar(&config.KVPrefix, "kv-prefix", "conductor-services",
 		"The Key Value prefix in consul to search for services under")
 	flag.IntVar(&config.Port, "port", 8888, "Listen on this port")
+	flag.BoolVar(&config.Version, "version", false, "Print version and exit")
 
 	flag.Parse()
+
+	if config.Version {
+		fmt.Printf("Conductor %s, '%s'\n", Version, CodeName)
+		os.Exit(0)
+	}
 
 	logLevelMap := map[string]log.Level{
 		"debug": log.DebugLevel,
