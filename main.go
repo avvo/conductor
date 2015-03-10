@@ -8,8 +8,8 @@ import (
 	"os"
 )
 
-const Version = "0.2.1"
-const CodeName = "Fuzzy Koala"
+const Version = "0.2.2"
+const CodeName = "Flippin Ninjas"
 
 type Config struct {
 	ConsulHost       string
@@ -37,7 +37,7 @@ func init() {
 		"Format logs in this format (either 'json' or 'lsmet')")
 	flag.StringVar(&config.LogLevel, "log-level", "info",
 		"Log level to use (debug, info, warn, error, fatal, or panic)")
-	flag.StringVar(&config.KVPrefix, "kv-prefix", "conductor-services",
+	flag.StringVar(&config.KVPrefix, "kv-prefix", "conductor/services",
 		"The Key Value prefix in consul to search for services under")
 	flag.IntVar(&config.Port, "port", 8888, "Listen on this port")
 	flag.BoolVar(&config.Version, "version", false, "Print version and exit")
