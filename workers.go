@@ -96,7 +96,6 @@ func (w *ConsulHealthWorker) BlockUntilConsulUpdate() {
 			"service_name": w.service.Name,
 			"error":        err,
 			"last_index":   w.lastIndex,
-			"new_index":    queryMeta.LastIndex,
 			"worker_type":  "consul_health"}).Error("Error getting service health from consul")
 		w.InputChan <- []*api.ServiceEntry{}
 		return
