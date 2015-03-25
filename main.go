@@ -8,8 +8,8 @@ import (
 	"os"
 )
 
-const Version = "0.2.2"
-const CodeName = "Flippin Ninjas"
+const Version = "0.2.3"
+const CodeName = "70s Shag Carpeting"
 
 type Config struct {
 	ConsulHost       string
