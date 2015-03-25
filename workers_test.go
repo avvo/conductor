@@ -74,3 +74,46 @@ func TestReconfiguringWorker(t *testing.T) {
 
 	w.ControlChan <- true
 }
+
+func TestBackoffIncrementing(t *testing.T) {
+	bo := NewBackoff(2, 30)
+	i := bo()
+	if i != 2 {
+		t.Errorf("First call to backoff function should be the number given, expected %d, got %d", 2, i)
+	}
+
+	i = bo()
+	if i != 4 {
+		t.Errorf("Second call to backoff function should be 2x the original number, expected %d, got %d", 4, i)
+	}
+
+	i = bo()
+	if i != 6 {
+		t.Errorf("Third call to backoff function should be 3x the original number, expected %d, got %d", 6, i)
+	}
+
+	i = bo()
+	if i != 8 {
+		t.Errorf("Fourth call to backoff function should be 4x the original number, expected %d, got %d", 8, i)
+	}
+}
+
+func TestBackoffLimit(t *testing.T) {
+	bo := NewBackoff(5, 10)
+	i := bo()
+	if i != 5 {
+		t.Errorf("First call to backoff function should be the number given, expected %d, got %d", 5, i)
+	}
+
+	i = bo()
+	if i != 10 {
+		t.Errorf("Second call to backoff function should be 2x the original number, expected %d, got %d", 10, i)
+	}
+
+	for i = 0; i < 5; i++ {
+		i = bo()
+		if i != 10 {
+			t.Errorf("Repeated calls to backoff should not go above the limit. Expected: %d, got %d", 10, i)
+		}
+	}
+}

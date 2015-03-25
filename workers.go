@@ -98,6 +98,9 @@ func (w *ConsulHealthWorker) BlockUntilConsulUpdate() {
 			"last_index":   w.lastIndex,
 			"new_index":    queryMeta.LastIndex,
 			"worker_type":  "consul_health"}).Error("Error getting service health from consul")
+		// Change this out with NewBackoff sometime when we can cleanly handle it without
+		// some form of state conflict or awkward locking.
+		time.Sleep(time.Duration(7) * time.Second)
 		w.InputChan <- []*api.ServiceEntry{}
 		return
 	}
@@ -135,4 +138,19 @@ func (w *ConsulHealthWorker) BlockUntilConsulUpdate() {
 		w.InputChan <- []*api.ServiceEntry{}
 	}
 	return
+}
+
+
+// NewBackoff returns a function that can be called multiple times to return an incrementing number
+// It should not exceed the limit given.
+// TODO: integrate this in some way to the health checks.
+func NewBackoff(start int, limit int) func() int {
+	i := 0
+	return func() int {
+		i = i + start
+		if i >= limit {
+			return limit
+		}
+		return i
+	}
 }
