@@ -139,7 +139,6 @@ func (w *ConsulHealthWorker) BlockUntilConsulUpdate() {
 	return
 }
 
-
 // NewBackoff returns a function that can be called multiple times to return an incrementing number
 // It should not exceed the limit given.
 // TODO: integrate this in some way to the health checks.
