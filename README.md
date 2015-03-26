@@ -17,13 +17,14 @@ What it does not do
 
 Status
 ======
+* This is still beta! Test it extensively before putting into production!
 * Everything initially planned currently works.
 
 How it works
 ============
 On boot Conductor does this:
 * Connects to consul and pulls all keys underneath the KV Prefix (defaults to 
-conductor/services/*)
+conductor/services/)
 * These key names are assumed to be Consul service names that you want proxied
 * The values for these keys need to be mount points (URL prefixes if you prefer)
 * Conductor fires up background processes that watch the consul the healthy nodes
