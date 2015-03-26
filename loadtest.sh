@@ -15,7 +15,7 @@ fig up -d registrator
 fig up -d helloworld
 fig scale helloworld=4
 
-curl -sS -X PUT -d '/helloworld' ${IP}:8500/v1/kv/conductor-services/helloworld > /dev/null
+curl -sS -X PUT -d '/helloworld' ${IP}:8500/v1/kv/conductor/services/helloworld > /dev/null
 
 fig up -d conductor
 if [ "x$1" == "x--scale" ]; then
