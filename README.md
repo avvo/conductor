@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/remkade/conductor.svg?branch=master)](https://travis-ci.org/remkade/conductor)
 Conductor
 =========
 The dynamically reconfigurable Consul reverse HTTP proxy.
