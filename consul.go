@@ -7,25 +7,30 @@ import (
 	"strings"
 )
 
+// Consul holds the consul configuration
 type Consul struct {
 	Client   *api.Client
 	KVPrefix string
 }
 
-type ServiceList []*Service
-
+// Service is our internal mapping for a service
 type Service struct {
 	Name       string
 	MountPoint string
 	Nodes      []Node
 }
 
+// ServiceList is just an array of services
+type ServiceList []*Service
+
+// Node is the representation of a Service running on a Server
 type Node struct {
 	Name    string
 	Address string
 	Port    int
 }
 
+// NewConsul returns a new Consul object given a URL, datacenter and KV prefix
 func NewConsul(address, datacenter, kvprefix string) (*Consul, error) {
 	config := api.DefaultConfig()
 	config.Address = address
@@ -41,7 +46,8 @@ func NewConsul(address, datacenter, kvprefix string) (*Consul, error) {
 	return &Consul{KVPrefix: kvprefix, Client: client}, nil
 }
 
-// Takes the key from a consul KVPair from consul and strips off the prefix
+// CleanupServiceName takes the key from a consul KVPair from consul and strips
+// off the KVPrefix.
 func (c *Consul) CleanupServiceName(name string) string {
 	return strings.TrimPrefix(name, fmt.Sprintf("%s/", c.KVPrefix))
 }
@@ -62,9 +68,8 @@ func (c *Consul) MapKVToService(kv *api.KVPair) *Service {
 	}
 }
 
-// Does the actual query to Consul for the service names underneath the
-// KVPrefix
-// TODO: Allow for blocking queries
+// GetListOfServices does the actual query to Consul for the service names
+// underneath the KVPrefix
 func (c *Consul) GetListOfServices() (*ServiceList, error) {
 	kvs, _, err := c.Client.KV().List(c.KVPrefix, nil)
 	if err != nil {
@@ -73,7 +78,7 @@ func (c *Consul) GetListOfServices() (*ServiceList, error) {
 	return c.MapKVPairsToServiceList(kvs), nil
 }
 
-// Takes a slice of consul KVPairs and returns a ServiceList
+// MapKVPairsToServiceList takes a slice of consul KVPairs and returns a ServiceList
 func (c *Consul) MapKVPairsToServiceList(kvs api.KVPairs) *ServiceList {
 	list := make(ServiceList, len(kvs), len(kvs))
 	for i, kv := range kvs {
@@ -82,8 +87,8 @@ func (c *Consul) MapKVPairsToServiceList(kvs api.KVPairs) *ServiceList {
 	return &list
 }
 
-// Loops over the Consul Health Service data and adds the nodes and Port to the
-// Service
+// AddNodesToService Loops over the Consul Health Service data and adds the nodes
+// and Port to the Service
 func (c *Consul) AddNodesToService(service *Service, serviceHealth []*api.ServiceEntry) *Service {
 	length := len(serviceHealth)
 	if length < 1 {
@@ -98,8 +103,8 @@ func (c *Consul) AddNodesToService(service *Service, serviceHealth []*api.Servic
 	return service
 }
 
-// Does the actual query to Consul and adds the Healthy Nodes to the service
-// TODO: Allow for blocking queries
+// GetHealthyNodesForService Does the actual query to Consul and adds the Healthy
+// Nodes to the service
 func (c *Consul) GetHealthyNodesForService(service *Service) (*Service, error) {
 	healthyServices, _, err := c.Client.Health().Service(service.Name, "", true, nil)
 	if err != nil {
@@ -109,7 +114,7 @@ func (c *Consul) GetHealthyNodesForService(service *Service) (*Service, error) {
 	return service, nil
 }
 
-// Gets all the nodes from Consul
+// GetAllHealthyNodes Gets all the healthy nodes for each service from Consul
 func (c *Consul) GetAllHealthyNodes(serviceList *ServiceList) (*ServiceList, error) {
 	for _, s := range *serviceList {
 		_, err := c.GetHealthyNodesForService(s)
