@@ -20,6 +20,16 @@ func NewReverseProxyWithLoadBalancer(mountPoint string, requests chan *chan url.
 		req.URL.Host = server.Host
 		originalRequest := req.URL.Path
 		req.URL.Path = strings.TrimPrefix(req.URL.Path, mountPoint)
+
+		if server.Host == "" {
+			log.WithFields(log.Fields{
+				"original_request":  originalRequest,
+				"rewritten_request": req.URL.Path,
+				"mount_point":       mountPoint,
+				"forward_to":        req.URL.Host,
+			}).Warn("No host found for this endpoint")
+		}
+
 		log.WithFields(log.Fields{
 			"original_request":  originalRequest,
 			"rewritten_request": req.URL.Path,
