@@ -2,6 +2,7 @@ package conductor
 
 import (
   "fmt"
+  "encoding/json"
   log "github.com/Sirupsen/logrus"
   "net/http"
   "net/http/httputil"
@@ -37,8 +38,10 @@ func NewLoadBalancer(builder func(Service) func() url.URL, c *Consul) *LoadBalan
 }
 
 func (lb *LoadBalancer) AddService(s *Service) {
+  fmt.Println("adding service: " + s.Name)
   if(lb.Workers[s.MountPoint] != nil) {
     // already added this worker
+    fmt.Println("already added: " + s.Name)
     return
   }
   w := lb.StartWorker(s)
@@ -65,17 +68,32 @@ func (lb *LoadBalancer) StartHealthWorker(s *Service, w *LoadBalancerWorker) {
 
 func (lb *LoadBalancer) AddHttpHandler(s *Service, w *LoadBalancerWorker) {
   // Builds the HTTP Proxy map like so: {"/solr": http.HandlerFunc()}
-  lb.MountPointToReverseProxyMap[s.MountPoint] = NewReverseProxyWithLoadBalancer(s.MountPoint, w.RequestChan)
+  rp := NewReverseProxyWithLoadBalancer(s.MountPoint, w.RequestChan)
+  lb.MountPointToReverseProxyMap[s.MountPoint] = rp
 
-  // Launch health workers
-  for mp, rp := range lb.MountPointToReverseProxyMap {
-    log.WithFields(log.Fields{"mount_point": mp}).Debug("Adding mountpoint handler function")
-    http.HandleFunc(fmt.Sprintf("%s/", mp), rp.ServeHTTP)
+  log.WithFields(log.Fields{"mount_point": s.MountPoint}).Debug("Adding mountpoint handler function")
+  http.HandleFunc(fmt.Sprintf("%s/", s.MountPoint), rp.ServeHTTP)
+}
+
+func (lb *LoadBalancer) ListEndpointsHandler() func(http.ResponseWriter, *http.Request) {
+  return func(w http.ResponseWriter, r *http.Request) {
+    endpoints := make(map[string]string)
+    for mount, _ := range lb.MountPointToReverseProxyMap {
+      endpoints[mount] = mount
+    }
+    json, err := json.Marshal(endpoints)
+    if err != nil {
+
+    }
+    fmt.Fprintf(w, `{"endpoints":[%s]}`, string(json))
   }
 }
 
 func (lb *LoadBalancer) StartHttpServer(port int) error {
   // Start listening
+  http.HandleFunc("/_endpoints", lb.ListEndpointsHandler())
+  http.HandleFunc("/", noMatchingMountPointHandler)
+	http.HandleFunc("/_ping", pingHandler)
   return http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 

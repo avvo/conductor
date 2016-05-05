@@ -132,6 +132,7 @@ func monitorConsulServices(lb *conductor.LoadBalancer, consul *conductor.Consul)
   }
 
   // sleep 1 minute
+  fmt.Println("sleeping...")
   time.Sleep(time.Duration(1)*time.Minute)
 
   monitorConsulServices(lb, consul)
