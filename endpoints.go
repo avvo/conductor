@@ -1,4 +1,4 @@
-package main
+package conductor
 
 import (
 	"fmt"

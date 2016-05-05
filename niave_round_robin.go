@@ -1,11 +1,11 @@
-package main
+package conductor
 
 import (
 	"fmt"
 	"net/url"
 )
 
-func NewNiaveRoundRobin(s Service) func() url.URL {
+func NewNaiveRoundRobin(s Service) func() url.URL {
 	i := -1
 	if len(s.Nodes) == 0 {
 		return func() url.URL { return url.URL{} }
