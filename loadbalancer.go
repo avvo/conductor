@@ -17,15 +17,15 @@ type LoadBalancer struct {
 	// Keys are mount points, values are the loadbalancing function for that service
 	MountPointToReverseProxyMap map[string]*httputil.ReverseProxy
 
-  // Keys are service names, values are the service definition
-  Services map[string]*Service
+	// Keys are service names, values are the service definition
+	Services map[string]*Service
 
 	// List of all the workers
 	Workers map[string]*LoadBalancerWorker
 
 	HealthWorkers map[string]*ConsulHealthWorker
 
-  Mux *Remux
+	Mux *Remux
 
 	ConsulConnection *Consul
 }
@@ -35,11 +35,11 @@ func NewLoadBalancer(builder func(Service) func() url.URL, c *Consul) *LoadBalan
 
 	// Create the channels and start the workers
 	lb.ConsulConnection = c
-  lb.Services = make(map[string]*Service)
+	lb.Services = make(map[string]*Service)
 	lb.Workers = make(map[string]*LoadBalancerWorker)
 	lb.MountPointToReverseProxyMap = make(map[string]*httputil.ReverseProxy)
 	lb.HealthWorkers = make(map[string]*ConsulHealthWorker)
-  lb.Mux = NewRemux()
+	lb.Mux = NewRemux()
 
 	return lb
 }
@@ -49,9 +49,9 @@ func (lb *LoadBalancer) AddService(s *Service) {
 		// already added this worker
 		return
 	}
-  fmt.Println("adding service: " + s.Name)
+	fmt.Println("adding service: " + s.Name)
 
-  lb.Services[s.Name] = s
+	lb.Services[s.Name] = s
 
 	w := lb.StartWorker(s)
 	lb.StartHealthWorker(s, w)
@@ -85,28 +85,28 @@ func (lb *LoadBalancer) AddHttpHandler(s *Service, w *LoadBalancerWorker) {
 }
 
 func (lb *LoadBalancer) RemoveService(name string) {
-  fmt.Println("removing service: " + name)
-  if lb.Services[name] != nil {
-    fmt.Println("found service to remove")
-    s := lb.Services[name]
-    delete(lb.Services, name)
+	fmt.Println("removing service: " + name)
+	if lb.Services[name] != nil {
+		fmt.Println("found service to remove")
+		s := lb.Services[name]
+		delete(lb.Services, name)
 
-    // clean up worker
-    w := lb.Workers[name]
+		// clean up worker
+		w := lb.Workers[name]
 		log.WithFields(log.Fields{"mount_point": s.MountPoint}).Debug("Telling loadbalancer worker to quit")
 		w.ControlChan <- true
-    delete(lb.Workers, name)
+		delete(lb.Workers, name)
 
-    // clean up health worker
-    hw := lb.HealthWorkers[name]
-    log.WithFields(log.Fields{"mount_point": s.MountPoint}).Debug("Telling consul health worker to quit")
+		// clean up health worker
+		hw := lb.HealthWorkers[name]
+		log.WithFields(log.Fields{"mount_point": s.MountPoint}).Debug("Telling consul health worker to quit")
 		hw.ControlChan <- true
-    delete(lb.HealthWorkers, name)
+		delete(lb.HealthWorkers, name)
 
-    // deregister the http listener
-    lb.Mux.Deregister(s.MountPoint)
-    delete(lb.MountPointToReverseProxyMap, s.MountPoint)
-  }
+		// deregister the http listener
+		lb.Mux.Deregister(s.MountPoint)
+		delete(lb.MountPointToReverseProxyMap, s.MountPoint)
+	}
 }
 
 func (lb *LoadBalancer) ListEndpointsHandler() func(http.ResponseWriter, *http.Request) {

@@ -31,12 +31,12 @@ type Node struct {
 }
 
 func (list *ServiceList) HasServiceNamed(name string) bool {
-  for _, s := range *list {
-    if s.Name == name {
-      return true
-    }
-  }
-  return false
+	for _, s := range *list {
+		if s.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 // NewConsul returns a new Consul object given a URL, datacenter and KV prefix

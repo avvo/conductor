@@ -1,11 +1,11 @@
 package conductor
 
 import (
-  "sync"
-  "net/http"
-	"path"
+	"net/http"
 	"net/url"
-  "strings"
+	"path"
+	"strings"
+	"sync"
 )
 
 // Remux is an HTTP request multiplexer.
@@ -212,8 +212,8 @@ func (mux *Remux) HandleFunc(pattern string, handler func(http.ResponseWriter, *
 }
 
 func (mux *Remux) Deregister(pattern string) error {
-    mux.mu.Lock()
-    defer mux.mu.Unlock()
-    delete(mux.m, pattern)
-    return nil
+	mux.mu.Lock()
+	defer mux.mu.Unlock()
+	delete(mux.m, pattern)
+	return nil
 }
