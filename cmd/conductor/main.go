@@ -88,11 +88,13 @@ func main() {
   if err != nil {
     log.Fatal(err)
   }
-  lb.Cleanup()
 }
 
 // recursively monitor consul and update the loadbalancer endpoints
 func monitorConsulServices(lb *conductor.LoadBalancer, consul *conductor.Consul) {
+  log.WithFields(log.Fields{"consul": config.ConsulHost,
+    "data_center": config.ConsulDataCenter}).Debug("Fetching service list from consul")
+
   serviceList, err := consul.GetListOfServices()
   if err != nil {
     log.WithFields(log.Fields{"consul": config.ConsulHost,
@@ -141,7 +143,6 @@ func monitorConsulServices(lb *conductor.LoadBalancer, consul *conductor.Consul)
   }
 
   // sleep 1 minute
-  fmt.Println("sleeping...")
   time.Sleep(time.Duration(1)*time.Minute)
 
   monitorConsulServices(lb, consul)

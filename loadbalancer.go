@@ -49,7 +49,7 @@ func (lb *LoadBalancer) AddService(s *Service) {
 		// already added this worker
 		return
 	}
-	fmt.Println("adding service: " + s.Name)
+	log.WithFields(log.Fields{"service": s.Name, "mount_point": s.MountPoint}).Debug("Adding service")
 
 	lb.Services[s.Name] = s
 
@@ -85,10 +85,9 @@ func (lb *LoadBalancer) AddHttpHandler(s *Service, w *LoadBalancerWorker) {
 }
 
 func (lb *LoadBalancer) RemoveService(name string) {
-	fmt.Println("removing service: " + name)
 	if lb.Services[name] != nil {
-		fmt.Println("found service to remove")
 		s := lb.Services[name]
+		log.WithFields(log.Fields{"service": s.Name, "mount_point": s.MountPoint}).Info("Removing service")
 		delete(lb.Services, name)
 
 		// clean up worker
@@ -106,16 +105,14 @@ func (lb *LoadBalancer) RemoveService(name string) {
 		// deregister the http listener
 		lb.Mux.Deregister(s.MountPoint)
 		delete(lb.MountPointToReverseProxyMap, s.MountPoint)
+	} else {
+		log.WithFields(log.Fields{"service": name}).Warn("Couldn't find registered service to remove!")
 	}
 }
 
 func (lb *LoadBalancer) ListEndpointsHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		endpoints := make(map[string]string)
-		for mount, _ := range lb.MountPointToReverseProxyMap {
-			endpoints[mount] = mount
-		}
-		json, err := json.Marshal(endpoints)
+		json, err := json.Marshal(lb.Services)
 		if err != nil {
 
 		}
@@ -129,8 +126,4 @@ func (lb *LoadBalancer) StartHttpServer(port int) error {
 	lb.Mux.HandleFunc("/", noMatchingMountPointHandler)
 	lb.Mux.HandleFunc("/_ping", pingHandler)
 	return http.ListenAndServe(fmt.Sprintf(":%d", port), lb.Mux)
-}
-
-func (lb *LoadBalancer) Cleanup() {
-
 }
