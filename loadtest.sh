@@ -38,4 +38,4 @@ else
 fi
 
 docker-compose stop
-docker-compose rm -a -f
+docker-compose rm --all -f
