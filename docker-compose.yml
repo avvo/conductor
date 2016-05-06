@@ -11,7 +11,7 @@ consul:
     - "--advertise=192.168.59.103"
 
 registrator:
-  image: progrium/registrator
+  image: gliderlabs/registrator
   command:
     - consul://consul:8500
   links:
@@ -28,7 +28,8 @@ helloworld:
     SERVICE_TAGS: hello
 
 conductor:
-  image: conductor
+  build: .
+  # image: conductor
   net: host
   ports:
     - 8888:8888
