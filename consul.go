@@ -30,6 +30,15 @@ type Node struct {
 	Port    int
 }
 
+func (list *ServiceList) HasServiceNamed(name string) bool {
+  for _, s := range *list {
+    if s.Name == name {
+      return true
+    }
+  }
+  return false
+}
+
 // NewConsul returns a new Consul object given a URL, datacenter and KV prefix
 func NewConsul(address, datacenter, kvprefix string) (*Consul, error) {
 	config := api.DefaultConfig()

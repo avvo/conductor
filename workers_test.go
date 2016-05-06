@@ -18,7 +18,7 @@ func init() {
 }
 
 func TestRequestFromWorker(t *testing.T) {
-	w := NewLoadBalancerWorker(NewNiaveRoundRobin)
+	w := NewLoadBalancerWorker(NewNaiveRoundRobin)
 	go w.Work(service)
 	response := make(chan url.URL, 1)
 	// send our channel to the worker
@@ -42,7 +42,7 @@ func TestRequestFromWorker(t *testing.T) {
 }
 
 func TestReconfiguringWorker(t *testing.T) {
-	w := NewLoadBalancerWorker(NewNiaveRoundRobin)
+	w := NewLoadBalancerWorker(NewNaiveRoundRobin)
 	go w.Work(service)
 	response := make(chan url.URL, 1)
 	// send our channel to the worker

@@ -15,10 +15,10 @@ func init() {
 			Node{Name: "solr2", Address: "solr2.example.com", Port: 8984},
 		},
 	}
-	nrr = NewNiaveRoundRobin(s)
+	nrr = NewNaiveRoundRobin(s)
 }
 
-func TestNiaveRoundRobinNext(t *testing.T) {
+func TestNaiveRoundRobinNext(t *testing.T) {
 	r := nrr()
 	if r.Scheme != "http" {
 		t.Errorf("Expected scheme to be 'http' but got '%s'", r.Scheme)

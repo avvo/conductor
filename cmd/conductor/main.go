@@ -32,7 +32,7 @@ func init() {
     "The Consul Host to connect to")
   flag.StringVar(&config.ConsulDataCenter, "datacenter", "dc1",
     "The Consul Datacenter use")
-  flag.StringVar(&config.LoadBalancer, "loadbalancer", "niave_round_robin",
+  flag.StringVar(&config.LoadBalancer, "loadbalancer", "naive_round_robin",
     "The loadbalancer algorithm")
   flag.StringVar(&config.LogFormat, "log-format", "lsmet",
     "Format logs in this format (either 'json' or 'lsmet')")
@@ -127,8 +127,17 @@ func monitorConsulServices(lb *conductor.LoadBalancer, consul *conductor.Consul)
     os.Exit(1)
   }
 
+  // try and add all services
   for _, service := range *serviceList {
     lb.AddService(service)
+  }
+
+  // remove services not in the serviceList
+  for name, _ := range lb.Services {
+    if !serviceList.HasServiceNamed(name) {
+      fmt.Println("didn't find service: " + name + " - removing")
+      lb.RemoveService(name)
+    }
   }
 
   // sleep 1 minute
