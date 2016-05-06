@@ -10,14 +10,15 @@ if [ -z $IP ]; then
 fi
 
 docker-compose up -d registrator
-
-#fig up -d --no-recreate registrator
 docker-compose up -d helloworld
 docker-compose scale helloworld=4
 
 curl -sS -X PUT -d '/helloworld' ${IP}:8500/v1/kv/conductor/services/helloworld > /dev/null
 
+sleep 10s
 docker-compose up -d conductor
+sleep 10s
+
 if [ "x$1" == "x--scale" ]; then
   { echo "Starting siege with scaling test mode..."; $SIEGE ; } &
   sleep 20s
@@ -37,4 +38,4 @@ else
 fi
 
 docker-compose stop
-docker-compose rm
+docker-compose rm -a -f
