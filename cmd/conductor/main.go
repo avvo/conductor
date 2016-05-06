@@ -7,6 +7,7 @@ import (
   "os"
   conductor "../../"
   "time"
+  "strconv"
 )
 
 const Version = "0.2.5"
@@ -28,19 +29,27 @@ var config Config
 
 // Parse commandline and setup logging
 func init() {
-  flag.StringVar(&config.ConsulHost, "consul", "localhost:8500",
+  flag.StringVar(&config.ConsulHost, "consul",
+    getEnvironmentWithDefault("CONSUL", "localhost:8500"),
     "The Consul Host to connect to")
-  flag.StringVar(&config.ConsulDataCenter, "datacenter", "dc1",
+  flag.StringVar(&config.ConsulDataCenter, "datacenter",
+    getEnvironmentWithDefault("CONSUL_DATACENTER", "dc1"),
     "The Consul Datacenter use")
   flag.StringVar(&config.LoadBalancer, "loadbalancer", "naive_round_robin",
     "The loadbalancer algorithm")
   flag.StringVar(&config.LogFormat, "log-format", "lsmet",
     "Format logs in this format (either 'json' or 'lsmet')")
-  flag.StringVar(&config.LogLevel, "log-level", "info",
+  flag.StringVar(&config.LogLevel, "log-level",
+    getEnvironmentWithDefault("LOG_LEVEL", "info"),
     "Log level to use (debug, info, warn, error, fatal, or panic)")
-  flag.StringVar(&config.KVPrefix, "kv-prefix", "conductor/services",
+  flag.StringVar(&config.KVPrefix, "kv-prefix",
+    getEnvironmentWithDefault("KV_PREFIX", "conductor/services"),
     "The Key Value prefix in consul to search for services under")
-  flag.IntVar(&config.Port, "port", 8888, "Listen on this port")
+  port, err := strconv.Atoi(getEnvironmentWithDefault("PORT", "8888"))
+  if err != nil {
+    port = 8888
+  }
+  flag.IntVar(&config.Port, "port", port, "Listen on this port")
   flag.BoolVar(&config.Version, "version", false, "Print version and exit")
 
   flag.Parse()
@@ -63,6 +72,15 @@ func init() {
 
   if config.LogFormat == "json" {
     log.SetFormatter(new(log.JSONFormatter))
+  }
+}
+
+func getEnvironmentWithDefault(name string, d string) string {
+  val := os.Getenv(name)
+  if val == "" {
+    return d
+  } else {
+    return val
   }
 }
 
