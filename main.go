@@ -27,11 +27,13 @@ var config Config
 
 // Parse commandline and setup logging
 func init() {
+
 	flag.StringVar(&config.ConsulHost, "consul", "localhost:8500",
 		"The Consul Host to connect to")
 	flag.StringVar(&config.ConsulDataCenter, "datacenter", "dc1",
 		"The Consul Datacenter use")
-	flag.StringVar(&config.LoadBalancer, "loadbalancer", "niave_round_robin",
+	flag.StringVar(&config.LoadBalancer, "loadbalancer",
+		"niave_round_robin",
 		"The loadbalancer algorithm")
 	flag.StringVar(&config.LogFormat, "log-format", "lsmet",
 		"Format logs in this format (either 'json' or 'lsmet')")
@@ -44,10 +46,13 @@ func init() {
 
 	flag.Parse()
 
-	if config.Version {
-		fmt.Printf("Conductor %s, '%s'\n", Version, CodeName)
-		os.Exit(0)
-	}
+	// Load Environment Variables to override flags
+	override_with_env_var(&config.ConsulHost, "CONSUL_HOST")
+	override_with_env_var(&config.ConsulDataCenter, "CONSUL_DATACENTER")
+	override_with_env_var(&config.KVPrefix, "CONSUL_KV_PREFIX")
+	override_with_env_var(&config.LoadBalancer, "LOADBALANCER")
+	override_with_env_var(&config.LogFormat, "LOG_FORMAT")
+	override_with_env_var(&config.LogLevel, "LOG_LEVEL")
 
 	logLevelMap := map[string]log.Level{
 		"debug": log.DebugLevel,
@@ -66,6 +71,11 @@ func init() {
 }
 
 func main() {
+	if config.Version {
+		fmt.Printf("Conductor %s, '%s'\n", Version, CodeName)
+		os.Exit(0)
+	}
+
 	log.WithFields(log.Fields{"version": Version,
 		"code_name": CodeName}).Info("Starting Conductor")
 	log.WithFields(log.Fields{"consul": config.ConsulHost,
@@ -175,5 +185,12 @@ func exit(lb *LoadBalancer, healthWorkers map[string]*ConsulHealthWorker) {
 	for mp, w := range healthWorkers {
 		log.WithFields(log.Fields{"mount_point": mp}).Debug("Telling consul health worker to quit")
 		w.ControlChan <- true
+	}
+}
+
+func override_with_env_var(config_var *string, env string) {
+	value := os.Getenv(env)
+	if value != "" {
+		*config_var = value
 	}
 }
